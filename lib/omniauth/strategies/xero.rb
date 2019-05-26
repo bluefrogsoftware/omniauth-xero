@@ -10,7 +10,7 @@ module OmniAuth
       attr_reader :access_token
 
       def initialize(app, consumer_key, consumer_secret, options = {}, &block)
-        @xero = Xeroizer::PrivateApplication.new(
+        @xero = Xeroizer::PartnerApplication.new(
           consumer_key,
           consumer_secret,
           options[:private_key_file],
@@ -31,6 +31,11 @@ module OmniAuth
         }
 
         authorize_params = {}
+
+        # Redirect users back to the host app if they decline authorization
+        # See: https://developer.xero.com/documentation/auth-and-limits/oauth-callback-domains-explained#redirectonerror
+        authorize_params[:redirectOnError] = 'true'
+
         unless request_token.callback_confirmed?
           authorize_params[:oauth_callback] = callback_url
         end
@@ -96,7 +101,7 @@ module OmniAuth
       private
 
       def user
-        @user ||= (users = @xero.User.all(is_subscriber: true)).find{|user| user.is_subscriber } || users.first
+        @user ||= (users = @xero.User.all(is_subscriber: true)).find{ |user| user.is_subscriber } || users.first
       end
 
       def organisation
